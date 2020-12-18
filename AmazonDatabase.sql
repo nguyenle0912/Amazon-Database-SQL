@@ -367,3 +367,74 @@ ADD
   CONSTRAINT FKVID FOREIGN KEY(catalogID) REFERENCES CATALOGS(catalogID) ON DELETE 
 SET 
   NULL;
+
+  
+/*Stored Procedures*/
+CREATE 
+OR REPLACE PROCEDURE Add_Credit_Card(
+  cardID in char, type in varchar, securityCode in char, 
+  expirationDate in date, cardHolderName in varchar, 
+  walletID in int
+) AS BEGIN INSERT INTO CREDIT_CARD 
+VALUES 
+  (
+    cardID, type, securityCode, expirationDate, 
+    cardHolderName, walletID
+  );
+END add_credit_card;
+CREATE 
+OR REPLACE PROCEDURE Update_Item_Price (
+  itemNum in item.itemID % type, newItemPrice in item.itemPrice % type
+) AS BEGIN 
+UPDATE 
+  ITEM 
+SET 
+  itemPrice = newItemPrice 
+WHERE 
+  itemID = itemNum;
+END Update_Item_Price;
+
+/*Triggers*/
+AFTER 
+  INSERT 
+  or 
+UPDATE 
+  ON ORDERS FOR EACH ROW DECLARE User_id CUSTOMER.userID % TYPE;
+BEGIN 
+SELECT 
+  userID INTO User_id 
+FROM 
+  SHOPPING_CART 
+WHERE 
+  orderID = : new.orderID;
+INSERT INTO ORDER_HISTORY(
+  userID, orderID, dateOfOrder, paymentMethod, 
+  orderSummary, grandTotal
+) 
+VALUES 
+  (
+    User_id, : new.orderID, : new.dateOfOrder, 
+    : new.paymentMethod, : new.orderSummary, 
+    : new.grandTotal
+  );
+END;
+CREATE 
+OR REPLACE TRIGGER Clear_Cart 
+AFTER 
+  INSERT ON ORDERS FOR EACH ROW DECLARE cartNum SHOPPING_CART.cartID % TYPE;
+BEGIN 
+SELECT 
+  cartID INTO cartNum 
+FROM 
+  SHOPPING_CART 
+WHERE 
+  userID = : new.userID;
+DELETE FROM 
+  SHOPPING_CART 
+WHERE 
+  userID = : new.userID;
+DELETE FROM 
+  CART_HAS_ITEMS 
+WHERE 
+  cartID = cartNum;
+END;
