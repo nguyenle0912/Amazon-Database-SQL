@@ -1,6 +1,6 @@
 # Amazon-Database-SQL
 
-####Amazon Database Design including:
+#### Amazon Database Design including:
                 
 1. Data Requirements
 2. EER Diagram
